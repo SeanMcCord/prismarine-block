@@ -1,7 +1,7 @@
 module.exports = loader
 module.exports.testedVersions = ['1.8.8', '1.9.4', '1.10.2', '1.11.2', '1.12.2', '1.13.2', '1.14.4', '1.15.2', '1.16.4']
 
-function loader (mcVersion) {
+function loader(mcVersion) {
   const mcData = require('minecraft-data')(mcVersion)
   return provider({
     Biome: require('prismarine-biome')(mcVersion),
@@ -14,17 +14,17 @@ function loader (mcVersion) {
   })
 }
 
-function provider ({ Biome, blocks, blocksByStateId, toolMultipliers, shapes, majorVersion, effectsByName }) {
+function provider({Biome, blocks, blocksByStateId, toolMultipliers, shapes, majorVersion, effectsByName}) {
   Block.fromStateId = function (stateId, biomeId) {
     if (majorVersion === '1.8' || majorVersion === '1.9' || majorVersion === '1.10' || majorVersion === '1.11' ||
-    majorVersion === '1.12') {
+      majorVersion === '1.12') {
       return new Block(stateId >> 4, biomeId, stateId & 15)
     } else {
       return new Block(undefined, biomeId, 0, stateId)
     }
   }
 
-  function parseValue (value, state) {
+  function parseValue(value, state) {
     if (state.type === 'enum') {
       return state.values.indexOf(value)
     }
@@ -33,7 +33,7 @@ function provider ({ Biome, blocks, blocksByStateId, toolMultipliers, shapes, ma
     return value
   }
 
-  function getStateValue (states, name, value) {
+  function getStateValue(states, name, value) {
     let offset = 1
     for (let i = states.length - 1; i >= 0; i--) {
       const state = states[i]
@@ -88,7 +88,7 @@ function provider ({ Biome, blocks, blocksByStateId, toolMultipliers, shapes, ma
     }
   }
 
-  function Block (type, biomeId, metadata, stateId) {
+  function Block(type, biomeId, metadata, stateId) {
     this.type = type
     this.metadata = metadata
     this.light = 0
@@ -109,13 +109,13 @@ function provider ({ Biome, blocks, blocksByStateId, toolMultipliers, shapes, ma
       this.hardness = blockEnum.hardness
       this.displayName = blockEnum.displayName
       this.shapes = blockEnum.shapes
-      if ('stateShapes' in blockEnum) {
+      if (blockEnum.hasOwnProperty('stateShapes')) {
         if (blockEnum.stateShapes[this.metadata] !== undefined) {
           this.shapes = blockEnum.stateShapes[this.metadata]
         } else {
           this.missingStateShape = true
         }
-      } else if ('variations' in blockEnum) {
+      } else if (blockEnum.hasOwnProperty('variations')) {
         const variations = blockEnum.variations
         for (const i in variations) {
           if (variations[i].metadata === metadata) {
@@ -134,14 +134,18 @@ function provider ({ Biome, blocks, blocksByStateId, toolMultipliers, shapes, ma
       this.name = ''
       this.displayName = ''
       this.shapes = []
+      this.missingStateShape = false;
       this.hardness = 0
       this.boundingBox = 'empty'
       this.transparent = true
       this.diggable = false
+      this.material = null;
+      this.harvestTools = [];
+      this.drops = [];
     }
   }
 
-  function propValue (state, value) {
+  function propValue(state, value) {
     if (state.type === 'enum') return state.values[value]
     if (state.type === 'bool') return !value
     return value
@@ -162,16 +166,16 @@ function provider ({ Biome, blocks, blocksByStateId, toolMultipliers, shapes, ma
   }
 
   Block.prototype.canHarvest = function (heldItemType) {
-    if (!this.harvestTools) { return true }; // for blocks harvestable by hand
+    if (!this.harvestTools) {return true}; // for blocks harvestable by hand
     return heldItemType && this.harvestTools && this.harvestTools[heldItemType]
   }
 
-  function effectLevel (effect, effects) {
+  function effectLevel(effect, effects) {
     const e = effects[effectsByName[effect].id]
     return e ? e.amplifier : -1
   }
 
-  function enchantmentLevel (enchantment, enchantments) {
+  function enchantmentLevel(enchantment, enchantments) {
     for (const e of enchantments) {
       if (typeof enchantment === 'string' ? e.id.includes(enchantment) : e.id === enchantment) {
         return e.lvl
