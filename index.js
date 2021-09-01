@@ -1,7 +1,7 @@
 module.exports = loader
 module.exports.testedVersions = ['1.8.8', '1.9.4', '1.10.2', '1.11.2', '1.12.2', '1.13.2', '1.14.4', '1.15.2', '1.16.4']
 
-function loader (mcVersion) {
+function loader(mcVersion) {
   const mcData = require('minecraft-data')(mcVersion)
   return provider({
     Biome: require('prismarine-biome')(mcVersion),
@@ -15,7 +15,7 @@ function loader (mcVersion) {
   })
 }
 
-function provider ({ Biome, blocks, blocksByStateId, toolMultipliers, shapes, isVersionNewerOrEqualTo, effectsByName, enchantmentsByName }) {
+function provider({Biome, blocks, blocksByStateId, toolMultipliers, shapes, isVersionNewerOrEqualTo, effectsByName, enchantmentsByName}) {
   Block.fromStateId = function (stateId, biomeId) {
     // 1.13+: metadata is completely removed and only block state IDs are used
     if (isVersionNewerOrEqualTo('1.13')) {
@@ -25,7 +25,7 @@ function provider ({ Biome, blocks, blocksByStateId, toolMultipliers, shapes, is
     }
   }
 
-  function parseValue (value, state) {
+  function parseValue(value, state) {
     if (state.type === 'enum') {
       return state.values.indexOf(value)
     }
@@ -37,7 +37,7 @@ function provider ({ Biome, blocks, blocksByStateId, toolMultipliers, shapes, is
     return state.values.indexOf(value.toString())
   }
 
-  function getStateValue (states, name, value) {
+  function getStateValue(states, name, value) {
     let offset = 1
     for (let i = states.length - 1; i >= 0; i--) {
       const state = states[i]
@@ -91,7 +91,7 @@ function provider ({ Biome, blocks, blocksByStateId, toolMultipliers, shapes, is
     }
   }
 
-  function Block (type, biomeId, metadata, stateId) {
+  function Block(type, biomeId, metadata, stateId) {
     this.type = type
     this.metadata = metadata
     this.light = 0
@@ -112,13 +112,13 @@ function provider ({ Biome, blocks, blocksByStateId, toolMultipliers, shapes, is
       this.hardness = blockEnum.hardness
       this.displayName = blockEnum.displayName
       this.shapes = blockEnum.shapes
-      if ('stateShapes' in blockEnum) {
+      if (blockEnum.hasOwnProperty('stateShapes')) {
         if (blockEnum.stateShapes[this.metadata] !== undefined) {
           this.shapes = blockEnum.stateShapes[this.metadata]
         } else {
           this.missingStateShape = true
         }
-      } else if ('variations' in blockEnum) {
+      } else if (blockEnum.hasOwnProperty('variations')) {
         const variations = blockEnum.variations
         for (const i in variations) {
           if (variations[i].metadata === metadata) {
@@ -137,14 +137,18 @@ function provider ({ Biome, blocks, blocksByStateId, toolMultipliers, shapes, is
       this.name = ''
       this.displayName = ''
       this.shapes = []
+      this.missingStateShape = false;
       this.hardness = 0
       this.boundingBox = 'empty'
       this.transparent = true
       this.diggable = false
+      this.material = null;
+      this.harvestTools = [];
+      this.drops = [];
     }
   }
 
-  function propValue (state, value) {
+  function propValue(state, value) {
     if (state.type === 'enum') return state.values[value]
     if (state.type === 'bool') return !value
     return value
@@ -165,7 +169,7 @@ function provider ({ Biome, blocks, blocksByStateId, toolMultipliers, shapes, is
   }
 
   Block.prototype.canHarvest = function (heldItemType) {
-    if (!this.harvestTools) { return true }; // for blocks harvestable by hand
+    if (!this.harvestTools) {return true}; // for blocks harvestable by hand
     return heldItemType && this.harvestTools && this.harvestTools[heldItemType]
   }
 
@@ -187,7 +191,7 @@ function provider ({ Biome, blocks, blocksByStateId, toolMultipliers, shapes, is
     }
   }
 
-  function getEffectLevel (effectName, effects) {
+  function getEffectLevel(effectName, effects) {
     const effectDescriptor = effectsByName[effectName]
     if (!effectDescriptor) {
       return 0
@@ -199,7 +203,7 @@ function provider ({ Biome, blocks, blocksByStateId, toolMultipliers, shapes, is
     return effectInfo.amplifier + 1
   }
 
-  function getEnchantmentLevel (enchantmentName, enchantments) {
+  function getEnchantmentLevel(enchantmentName, enchantments) {
     const enchantmentDescriptor = enchantmentsByName[enchantmentName]
     if (!enchantmentDescriptor) {
       return 0
@@ -217,7 +221,7 @@ function provider ({ Biome, blocks, blocksByStateId, toolMultipliers, shapes, is
     return 0
   }
 
-  function getMiningFatigueMultiplier (effectLevel) {
+  function getMiningFatigueMultiplier(effectLevel) {
     switch (effectLevel) {
       case 0: return 1.0
       case 1: return 0.3
